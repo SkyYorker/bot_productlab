@@ -1,0 +1,79 @@
+stages:
+  - lint
+  - test
+  - build
+  - deploy
+
+variables:
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: "/certs"
+
+# Линтинг кода
+lint:
+  stage: lint
+  image: python:3.11
+  before_script:
+    - pip install black flake8 isort
+  script:
+    - black --check app/ bot/ workers/
+    - flake8 app/ bot/ workers/ --max-line-length=100 --ignore=E203,W503
+    - isort --check-only app/ bot/ workers/
+  only:
+    - merge_requests
+    - main
+
+# Тестирование
+test:
+  stage: test
+  image: python:3.11
+  services:
+    - postgres:15-alpine
+    - rabbitmq:3.12-management-alpine
+  variables:
+    POSTGRES_DB: productlab_test
+    POSTGRES_USER: productlab
+    POSTGRES_PASSWORD: productlab_pass
+    DATABASE_URL: postgresql+asyncpg://productlab:productlab_pass@postgres:5432/productlab_test
+    RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+  before_script:
+    - pip install -r requirements.txt
+    - alembic upgrade head
+  script:
+    - pytest --cov=app --cov=bot --cov-report=term-missing
+  coverage: '/TOTAL.*\s+(\d+%)$/'
+  only:
+    - merge_requests
+    - main
+
+# Сборка Docker образа
+build:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  script:
+    - docker build -t $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG .
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
+  only:
+    - main
+    - tags
+
+# Деплой (пример)
+deploy:
+  stage: deploy
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache openssh-client
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+  script:
+    - echo "Deploy to production server"
+    # Здесь команды для деплоя
+  only:
+    - main
+  when: manual
+

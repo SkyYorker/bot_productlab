@@ -1,0 +1,43 @@
+# FastAPI и сервер
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
+# База данных
+sqlalchemy==2.0.23
+alembic==1.12.1
+asyncpg==0.29.0
+psycopg2-binary==2.9.9
+
+# Telegram бот
+aiogram==3.2.0
+
+# Message Queue
+aio-pika==9.2.0
+pika==1.3.2
+
+# Rate Limiting
+slowapi==0.1.9
+redis==5.0.1
+
+# Аутентификация
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.6
+
+# Тестирование
+pytest==7.4.3
+pytest-asyncio==0.21.1
+pytest-cov==4.1.0
+httpx==0.25.1
+
+# Утилиты
+python-dotenv==1.0.0
+loguru==0.7.2
+
+# Линтеры и форматтеры
+black==23.11.0
+flake8==6.1.0
+isort==5.12.0
+
